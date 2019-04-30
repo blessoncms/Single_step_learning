@@ -51,10 +51,14 @@ def next_picker(nX,ny,old_train,old_label,incorrect,prob):
             keys=[(np.random.choice(np.array(keys)))]
             
         balanced_copy_idx+=keys
+    print('y',y)
+    print('balanced copy',balanced_copy_idx)
     data_train=x[balanced_copy_idx]
-    labels_train=y[balanced_copy_idx]
+    labels_train=np.reshape(y[balanced_copy_idx],(10,1))
     newX =nX[np.setdiff1d(np.arange(nX.shape[0]), balanced_copy_idx)]
     newy = ny[np.setdiff1d(np.arange(ny.shape[0]), balanced_copy_idx)]
+    print('old train',old_train.shape,'data train',data_train.shape)
+    print('old label',old_label.shape,'labels train',labels_train.shape)
     data_train=np.concatenate((old_train,data_train),axis=0)
     labels_train=np.concatenate((old_label,labels_train),axis=0)
     return (data_train,labels_train,newX,newy)
