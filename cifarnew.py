@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+
 # -*- coding: utf-8 -*-
 """
 
@@ -32,12 +32,12 @@ x_train = x_train.astype('float32')
 x_test = x_test.astype('float32')
 print(x_train.shape,x_test.shape,type(x_train),y_train.shape,y_test.shape)
 data=np.concatenate((x_train,x_test),axis=0)
-#data=data[0:1000]
+#data=data[0:100]
 print('DATA',data.shape)
 
 
 labels=np.concatenate((y_train,y_test),axis=0)
-#labels=labels[0:1000]
+#labels=labels[0:100]
 print('LABELS',labels.shape)
 
 
@@ -94,7 +94,7 @@ datagen = ImageDataGenerator(
 
 
 #Train trainset and labelset
-trainset,labelset,sample_idx=balanced_sample_maker(data,labels,2)
+trainset,labelset,sample_idx=balanced_sample_maker(data,labels,1)
 newX = data[np.setdiff1d(np.arange(data.shape[0]), sample_idx)]
 newy = labels[np.setdiff1d(np.arange(labels.shape[0]), sample_idx)]
 opt_rms = keras.optimizers.rmsprop(lr=0.001,decay=1e-6)
@@ -102,7 +102,7 @@ model.compile(loss='categorical_crossentropy', optimizer=opt_rms, metrics=['accu
 model.save_weights('model.h5')
 iter=0
 results={}
-for iter in range(0,10000):
+for iter in range(0,1000):
     print('Iteration No',iter,'starts')    
     print('Trainset Shape',trainset.shape,'Trainlabels',labelset.shape)
     datagen.fit(trainset)
@@ -115,16 +115,41 @@ for iter in range(0,10000):
     #with open('model.json', 'w') as json_file:
      #   json_file.write(model_json)
 
-    #model.save_weights('model.h5')    
-    incorrect=[]
-    prob_list={}
+    #model.save_weights('model.h5')  
+    ans=model.predict(newX,batch_size=32, verbose=2)
+    print('prediction',ans.shape,type(ans))  
+    maxlabel=np.argmax(ans,axis=1)
+    #maxlabel=np.array(maxlabel.reshape(maxlabel.shape[0],))
+    print('MaxLabel',maxlabel.shape)
+    maxval=np.max(ans,axis=1)
+    print('Maxval',maxval.shape)
+    newy=np.array(newy.reshape(newy.shape[0],))
+    print('newy',newy.shape)
+    print('maxval',maxval)
+    print('maxlabel',maxlabel)
+    print('newy',newy)
+
+    incorrect=np.where(maxlabel!=newy)
+    print(incorrect)
+    newyset=np_utils.to_categorical(newy,num_classes)
+    scores = model.evaluate(newX,newyset, batch_size=128, verbose=10)
+    #print('\nIteration No:%i Test result: %.3f loss: %.3f' % (iter,scoresi[1]*100,scores[0]))
+    results[iter]=('Accuracy:',scores[1]*100,'Loss:',scores[0],'Training Size:',trainset.shape[0])
+    with open('resapr_30.json','w') as fp:
+        json.dump(results,fp)   
+    #    file.write(res)
+    trainset,labelset,newX,newy=next_picker(newX,newy,trainset,labelset,incorrect,maxval)
+    print('\nIteration No:%i Test result: %.3f loss: %.3f' % (iter,scores[1]*100,scores[0]))
+    model.load_weights('model.h5')
+"""
+#    iter+=1
     for i in range(0,newX.shape[0]):
         if (np.argmax(model.predict(newX[i].reshape(1,32,32,3)),axis=1)!=newy[i]):
 
             incorrect.append(i)
         prob_list[i]=(np.max(model.predict(newX[i].reshape(1,32,32,3)),axis=1))
     print('Total No.',newX.shape[0],'InCorrect Predictions',len(incorrect))    
-    
+   ''' 
     newyset=np_utils.to_categorical(newy,num_classes)
     scores = model.evaluate(newX,newyset, batch_size=128, verbose=10)
     #print('\nIteration No:%i Test result: %.3f loss: %.3f' % (iter,scoresi[1]*100,scores[0]))
@@ -132,7 +157,7 @@ for iter in range(0,10000):
     with open('resapr_26.json','w') as fp:
         json.dump(results,fp)   
     #    file.write(res)
-    trainset,labelset,newX,newy=next_picker(newX,newy,trainset,labelset,incorrect,prob_list)
+    trainset,labelset,newX,newy=next_picker(newX,newy,trainset,labelset,incorrect,maxval)
     print('\nIteration No:%i Test result: %.3f loss: %.3f' % (iter,scores[1]*100,scores[0]))
-    model.load_weights('model.h5')
-    iter+=1
+    model.load_weights('model.h5')"""
+
